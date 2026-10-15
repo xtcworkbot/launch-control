@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+dist/
+.vercel/
+.DS_Store
+imports/
+configs/
+.env
+.vercel
+.env*
+ui-tests/ref/
+ui-tests/node_modules

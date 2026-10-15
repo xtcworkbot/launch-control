@@ -1,0 +1,11 @@
+{
+  "name": "launch-control-ui-tests",
+  "private": true,
+  "description": "Puppeteer screenshot/layout checks and an end-to-end click test for Launch Control. Uses your installed Google Chrome.",
+  "scripts": {
+    "serve": "node serve.js ../dist 8772",
+    "e2e": "node e2e-lc.js http://127.0.0.1:8772/",
+    "shots": "node shot.js http://127.0.0.1:8772/ out/lc --widths 1440,390 --script steps-lc.js"
+  },
+  "dependencies": { "puppeteer-core": "23.11.1" }
+}

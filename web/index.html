@@ -1,0 +1,218 @@
+<title>Launch Control</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%233c64ff'/%3E%3Cg transform='translate(16 16) rotate(45) scale(1.2) translate(-16 -16)'%3E%3Cpath d='M16 5.2c3.3 2.6 4.6 6.6 4.6 10.6v4.4h-9.2v-4.4c0-4 1.3-8 4.6-10.6z' fill='%23fff'/%3E%3Cpath d='M11.4 15.6 8.2 19v3.6l3.2-1.8zM20.6 15.6l3.2 3.4v3.6l-3.2-1.8z' fill='%23fff'/%3E%3Ccircle cx='16' cy='13' r='1.9' fill='%233c64ff'/%3E%3Cpath d='M13.6 21.4h4.8L16 27.2z' fill='%23fff' opacity='.75'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="app.css"><!--INLINE_CSS-->
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand" onclick="show('dashboard')" style="cursor:pointer" title="Dashboard"><svg viewBox="0 0 32 32" aria-hidden="true" class="logo"><rect width="32" height="32" rx="9" style="fill:var(--signal)"/><g transform="translate(16 16) rotate(45) scale(1.2) translate(-16 -16)"><path d="M16 5.2c3.3 2.6 4.6 6.6 4.6 10.6v4.4h-9.2v-4.4c0-4 1.3-8 4.6-10.6z" style="fill:var(--signal-ink)"/><path d="M11.4 15.6 8.2 19v3.6l3.2-1.8zM20.6 15.6l3.2 3.4v3.6l-3.2-1.8z" style="fill:var(--signal-ink)"/><circle cx="16" cy="13" r="1.9" style="fill:var(--signal)"/><path d="M13.6 21.4h4.8L16 27.2z" style="fill:var(--signal-ink)" opacity=".75"/></g></svg>
+      <b>Launch Control</b><small>sim</small><button class="collapse" onclick="toggleSide(event)" aria-label="Collapse sidebar" data-tip="Collapse sidebar"><svg class="i"><use href="#i-panel"/></svg></button></div>
+    <button class="search" onclick="openSearch()" aria-label="Search launches"><svg class="i"><use href="#i-search"/></svg><span>Search</span><kbd>⌘K</kbd></button>
+    <div class="launch-list" id="launch-list"></div>
+    <div class="feat">
+      <button class="nav-h feat-h" onclick="this.parentNode.classList.toggle('shut')"><span>Features</span><svg class="i chev"><use href="#i-chev"/></svg></button>
+      <nav class="nav" id="nav"></nav>
+    </div>
+    <div class="side-foot">
+      <button class="funder" onclick="show('wallets')" title="Funder wallet (simulated SOL)"><svg class="i"><use href="#i-wallet"/></svg><span>Funder</span><span class="mark sm-sol" aria-hidden="true"></span><b id="simbal">0.00</b><svg class="i"><use href="#i-chev"/></svg></button>
+      <div class="foot-btns"><button class="btn" onclick="show('import')"><svg class="i"><use href="#i-upload"/></svg>Import</button><button class="btn primary" onclick="newLaunch()"><svg class="i"><use href="#i-rocket"/></svg>Create Launch</button></div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar"><button class="btn ghost burger" onclick="toggleSide(event)" aria-label="Show sidebar"><svg class="i"><use href="#i-menu"/></svg></button>
+      <h1 id="title">Workspace</h1><div class="top-ws" id="hdr" hidden></div><nav class="stepper" id="stepper" hidden></nav><span class="sp"></span><span id="busy"><span class="live-dot"></span>working…</span><div class="top-token" id="top-token" hidden></div></header>
+    <div class="page">
+<!-- LIVE WORKSPACE -->
+<section class="tab" id="t-live">
+  <div id="live-empty" class="card empty"><svg class="i" style="width:34px;height:34px;color:var(--signal)"><use href="#i-rocket"/></svg><h2>No live launch</h2>
+    <p>Build a launch step by step, or start from the SHARDS reconstruction and drive it live with the same tools the launch tool gives you.</p>
+    <div class="row" style="justify-content:center"><button class="btn primary" onclick="show('create')"><svg class="i"><use href="#i-plus"/></svg>Create launch</button><button class="btn" onclick="quickStart()"><svg class="i"><use href="#i-zap"/></svg>Quick start: SHARDS</button></div></div>
+  <div id="ws" class="ws" hidden>
+    <div class="ws-main">
+      <div class="ws-chart chart-card">
+        <div class="chart-bar"><div class="seg tfseg" id="tf"></div><i class="vsep"></i><button class="btn sm ghost" id="b-bubbles" onclick="CH.toggleBubbles()" data-tip="Show or hide the trade bubbles" aria-label="Show or hide the trade bubbles"><svg class="i"><use href="#i-circles"/></svg><span>Hide bubbles</span></button>
+          <button class="btn sm ghost" onclick="CH.toggleLog()" id="b-log" data-tip="Log scale" aria-label="Log scale"><svg class="i"><use href="#i-log"/></svg><span>Log</span></button><button class="btn sm ghost" onclick="CH.reset()" data-tip="Fit the whole chart" aria-label="Fit the whole chart"><svg class="i"><use href="#i-fit"/></svg><span>Fit</span></button><i class="vsep"></i>
+          <div class="seg" id="b-color" title="Colour bubbles and volume by"><button class="on" data-v="tool" onclick="CH.setColor('tool')" data-tip="Colour every trade by who really made it (the sandbox knows).">Who it was</button><button data-v="read" onclick="CH.setColor('read')" data-tip="Colour every trade by the chart's guess, like a real investigator would see it.">Chart's guess</button></div><button class="btn sm ghost help-q" onclick="openChartHelp()" aria-label="What am I looking at?" data-tip="What am I looking at?">?</button>
+          <span class="sp"></span><div class="legend" id="tool-legend" style="margin:0"></div><i class="vsep"></i><div class="clock ck" id="ck"></div></div>
+        <div class="readbar" id="readbar"></div>
+        <div class="chart-wrap" id="chartwrap"><div class="ohlc" id="ohlc"></div><canvas id="chart"></canvas><button class="btn sm golive" id="golive" hidden onclick="CH.follow()"><span class="live-dot"></span>Go live</button><div class="insp" id="insp" hidden></div><div class="quiet" id="quiet" hidden></div></div>
+      </div>
+      <div class="ws-grip" aria-hidden="true"><i></i></div>
+      <div class="ws-bottom" id="bottom"></div>
+    </div>
+    <aside class="ws-rail">
+      <div class="rail-tabs" id="rail-tabs"><button class="on" data-r="market" onclick="railTab('market')">Market</button><button disabled title="Not modelled">Limit</button><button disabled title="Not modelled">Grid</button><span class="sp"></span><button data-r="trades" onclick="railTab('trades')"><svg class="i"><use href="#i-zap"/></svg>Trades</button></div>
+      <div id="rail"></div>
+      <div class="tape" id="rail-trades" hidden><div class="tape-head"><div class="seg" id="tape-tabs"><button class="on" data-k="all">ALL</button><button data-k="dev">DEV</button><button data-k="mine">MY WALLETS</button></div></div>
+        <div class="tape-row tape-th"><span>SOL</span><span>MCap.</span><span>Trader</span><span style="text-align:right">Age</span></div>
+        <div class="tape-rows" id="tape"></div></div>
+    </aside>
+  </div>
+</section>
+<!-- CREATE -->
+<section class="tab" id="t-create"><div class="create"><div id="step"></div><aside id="summary"></aside></div></section>
+<!-- WALLETS -->
+<section class="tab" id="t-wallets"><div id="wallets-page"></div></section>
+<!-- CONFIGURE -->
+<section class="tab" id="t-config">
+  <div class="grid side-grid">
+    <div class="card"><h3>Configurations</h3>
+      <div class="lib" id="lib"></div>
+      <div class="row" style="margin-top:10px"><button class="g" onclick="compareSelected()">Compare checked</button></div>
+      <p class="help">Built-ins are starting points. Clone one to edit and save it under your own name.</p><p class="help" id="libmode"></p></div>
+    <div>
+      <div class="card" style="margin-bottom:12px"><div class="row">
+        <label class="grow">Name<input id="cfgname" oninput="cur.name=this.value"></label>
+        <button class="b" onclick="runCurrent()">Run ▶</button>
+        <button class="g" onclick="saveCurrent()">Save</button>
+        <button class="g" onclick="cloneCurrent()">Save as copy</button>
+        <button class="g" onclick="loadCfg('Blank (everything off)')" title="Every tool and outside trader switched off">Blank</button><button class="g" onclick="loadDefaults()">Defaults</button></div></div>
+      <div id="form"></div>
+    </div>
+  </div>
+</section>
+<!-- RESULTS -->
+<section class="tab" id="t-results">
+  <div id="noresult" class="card mute">Run a configuration to see its fingerprint.</div>
+  <div id="result" style="display:none">
+    <div class="card" style="margin-bottom:12px"><h3 id="rtitle">Run</h3><div class="stats" id="rstats"></div></div>
+    <div class="card" style="margin-bottom:12px">
+      <h3>Market cap · trades labelled by tool
+        <span class="sp"></span>
+        <select id="ivl" style="width:auto" onchange="drawResult()"><option value="0">auto</option><option value="5">5s</option><option value="15">15s</option><option value="30">30s</option><option value="60">1m</option></select>
+        <label class="chk"><input type="checkbox" id="logy" onchange="drawResult()" checked> log</label>
+        <label class="chk"><input type="checkbox" id="mk" onchange="drawResult()" checked> markers</label>
+        <select id="xr" style="width:auto" onchange="drawResult()"><option value="0">full run</option><option value="60">first 1m</option><option value="300">first 5m</option><option value="900">first 15m</option></select></h3>
+      <canvas id="cv-candles" height="420"></canvas><div class="legend" id="lg-tools"></div></div>
+    <div class="grid two">
+      <div class="card"><h3>Holder distribution over time<span class="sp"></span><label class="chk"><input type="checkbox" id="stack" onchange="drawResult()" checked> by group</label></h3>
+        <canvas id="cv-holders" height="300"></canvas><div class="legend" id="lg-holders"></div>
+        <details style="margin-top:8px"><summary class="mute">Top holders at the end</summary><div class="scroll"><table id="tophold"></table></div></details></div>
+      <div class="card"><h3>Detection report<span class="sp help">public ledger only</span></h3><div id="report"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3>Wallet-funding graph (bubble map)<span class="sp"></span>
+      <select id="gmode" style="width:auto" onchange="drawGraph()"><option value="cluster">colour: linked clusters (what a detector sees)</option><option value="truth">colour: sandbox truth</option></select>
+      <label class="chk"><input type="checkbox" id="gorg" onchange="relayout()"> include unlinked organic</label></h3>
+      <canvas id="cv-graph" height="560"></canvas><div class="legend" id="lg-graph"></div>
+      <p class="help">Bubble size = peak % of supply held. Lines = SOL transfers, dashed = token transfers/claims. Exchanges, the Jito tip account and the Streamflow escrow are public hubs and do not link wallets.</p></div>
+    <div class="grid two" style="margin-top:12px">
+      <div class="card"><h3>Operator timeline</h3><div id="timeline" class="scroll"></div></div>
+      <div class="card"><h3>Economics (sandbox)</h3><div id="econ"></div></div>
+    </div>
+  </div>
+</section>
+<!-- COMPARE -->
+<section class="tab" id="t-compare">
+  <div class="card" style="margin-bottom:12px"><h3>Compare configurations side by side</h3>
+    <div class="legend" id="cmp-pick"></div>
+    <div class="row" style="margin-top:8px"><button class="b" onclick="runCompare()">Run comparison</button><label class="chk"><input type="checkbox" id="cmpy" checked onchange="drawCompare()"> shared price scale</label></div></div>
+  <div id="cmpout"></div>
+</section>
+<!-- IMPORT -->
+<section class="tab" id="t-import">
+  <div class="card case-pick" style="margin-bottom:12px"><h3>Research cases <span class="sp help">real launches, every swap from the chain, labelled from the research</span></h3><div class="row" id="caselist"></div></div>
+  <div class="grid two">
+    <div class="card"><h3>Import a real launch</h3>
+      <div class="row"><label class="grow">Name<input id="impname" placeholder="e.g. SHARDS"></label></div>
+      <div class="row" style="margin-top:8px"><label class="grow">Trades CSV<input type="file" id="ftrades" accept=".csv,text/csv"></label>
+        <label class="grow">Holders CSV (optional)<input type="file" id="fholders" accept=".csv,text/csv"></label></div>
+      <div class="row" style="margin-top:8px"><label class="grow">SOL transfers CSV (optional)<input type="file" id="ftransfers" accept=".csv,text/csv"></label></div>
+      <div class="row" style="margin-top:8px"><button class="b" onclick="doImport()">Import</button></div>
+      <p class="help"><b>Solscan:</b> the token page's DeFi Activities export (<code>export_defi_activities_…csv</code>) goes straight into Trades CSV. Solscan caps exports at 1,000 rows, newest first, so set its time filter to start at the launch. Its Transfers export is token moves, not SOL; leave it out. Other files: trades columns (any order, common aliases accepted): <code>timestamp</code> (unix s/ms or ISO), <code>wallet</code>, <code>side</code> (buy/sell), <code>sol_amount</code>, <code>token_amount</code>, optional <code>slot</code>. Raw 6-decimal token amounts are detected. Holders: <code>timestamp</code>, <code>wallet</code>, <code>balance</code> or <code>pct</code>. Transfers: <code>timestamp</code> or <code>slot</code>, <code>from</code>, <code>to</code>, <code>sol</code>. Plain SOL moves such as funding and withdrawals; include about a day after launch, because withdrawal sweeps often come late. Files are read in your browser and never uploaded. Imports are kept in this browser only.</p></div>
+    <div class="card"><h3>Imported launches</h3><div id="implist"></div>
+      <div class="row" style="margin-top:8px"><label>Search depth<select id="depth" style="width:auto"><option value="0">library only (fast)</option><option value="20">+20 variants</option><option value="40" selected>+40 variants</option><option value="80">+80 variants (slow)</option></select></label></div></div>
+  </div>
+  <div id="matchprog" class="card" style="margin-top:12px" hidden><b>Matching…</b> <span id="matchtxt" class="mute"></span><div class="prog-bar"><i id="matchbar"></i></div></div><div id="matchout" style="margin-top:12px"></div>
+</section>
+<!-- DASHBOARD -->
+<section class="tab" id="t-dashboard"><div id="dashboard-page"></div></section>
+<!-- GUIDE -->
+<section class="tab" id="t-guide"><div id="guide-page"></div></section>
+<!-- ARCHIVED -->
+<section class="tab" id="t-archived"><div id="archived-page"></div></section>
+<!-- ACTIVITY -->
+<section class="tab" id="t-activity"><div id="activity-page"></div></section>
+
+    </div>
+    <footer class="status" id="status"><span class="ok"><i class="dot"></i><span id="st-engine">Sim engine starting…</span></span><a onclick="show('guide')"><svg class="i"><use href="#i-info"/></svg>Guide</a><span class="sp"></span>
+      <a id="st-sol" class="st-price" onclick="solPriceDialog()" title="SOL price used for USD market caps. Click to set your own.">SOL …</a><span class="st-mid" id="st-mid">No live launch</span><a class="st-fees" id="st-fees" onclick="openFees()" title="Fees paid by your launch wallets"></a><span class="sp"></span>
+      <a href="https://docs.proxima.tools" target="_blank" rel="noopener"><svg class="i"><use href="#i-doc"/></svg>Tool docs</a><a onclick="show('activity')"><svg class="i"><use href="#i-clock"/></svg>Activity</a><a id="st-theme" class="theme-btn" onclick="toggleTheme()" title="Switch light / dark"></a><span class="badge-sim">Simulation · no live chain</span></footer>
+  </div>
+</div>
+<div id="tip"></div><div id="err"></div><div id="toast"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+ <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+ <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+ <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+ <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></symbol>
+ <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+ <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5"/></symbol>
+ <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+ <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+ <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+ <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+ <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></symbol>
+ <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+ <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></symbol>
+ <symbol id="i-shield-fill" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" fill="currentColor" fill-opacity=".25"/><path d="M12 3v18"/></symbol>
+ <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2 0-1.5-1-2 0-3s2-1 3-1a4 4 0 0 0 4-4c0-4.5-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></symbol>
+ <symbol id="i-pill" viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8" rx="4" transform="rotate(-40 12 12)"/><path d="m9 9 6 6"/></symbol>
+ <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+ <symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+ <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/></symbol>
+ <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+ <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+ <symbol id="i-cart" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11.5l2-8H6.2"/></symbol>
+ <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M17 6l3 3M15 8l2 2"/></symbol>
+ <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 20h1M20 14h1"/></symbol>
+ <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/></symbol>
+ <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+ <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+ <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+ <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+ <symbol id="i-archive" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></symbol>
+ <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+ <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+ <symbol id="i-broom" viewBox="0 0 24 24"><path d="M14 4l6 6M12 10l-7 7 2 3 3-1 7-7"/><path d="M9 13l2 2"/></symbol>
+ <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M9.5 9.5h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H14M12 8v1.5M12 15.5V17"/></symbol>
+ <symbol id="i-bubbles" viewBox="0 0 24 24"><circle cx="8" cy="9" r="4"/><circle cx="16.5" cy="15.5" r="3.5"/><circle cx="17" cy="6" r="2"/></symbol>
+ <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></symbol>
+ <symbol id="i-dollar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.5 9a2.5 2.5 0 0 0-2.5-1.5c-1.5 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1 2-2.5 2A2.6 2.6 0 0 1 9.5 15M12 6v1.5M12 16.5V18"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></symbol>
+ <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+ <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+ <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 19A1.4 1.4 0 0 0 5.8 21h12.4a1.4 1.4 0 0 0 1.3-2L14 9V3"/><path d="M7 15h10"/></symbol>
+ <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 3v18"/></symbol>
+ <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+ <symbol id="i-play" viewBox="0 0 24 24"><path d="m6 4 14 8-14 8z"/></symbol>
+ <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 4v16M17 4v16"/></symbol>
+ <symbol id="i-skip" viewBox="0 0 24 24"><path d="m5 4 10 8-10 8zM19 5v14"/></symbol>
+ <symbol id="i-circles" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><circle cx="16" cy="8" r="3"/><circle cx="18" cy="17" r="2"/></symbol>
+ <symbol id="i-log" viewBox="0 0 24 24"><path d="M3 20h18M5 17c3-1 5-4 7-8s4-5 7-5"/></symbol>
+ <symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+ <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+ <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3.5 1.6 2 2.8 3.5 2.8z"/></symbol>
+ <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+ <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+ <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 13v1M15 13v1M9 17h6"/></symbol>
+ <symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+ <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></symbol>
+ <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+ <symbol id="i-broom" viewBox="0 0 24 24"><path d="m13 11 8-8M9.5 9.5l5 5M4 20c2-1 3-3 4-5l5-5 3 3-5 5c-2 1-4 2-5 4z"/></symbol>
+ <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+ <symbol id="i-bomb" viewBox="0 0 24 24"><circle cx="11" cy="13" r="8"/><path d="m17 7 2-2M19 3v2h2"/></symbol>
+ <symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6"/><path d="M18.1 10.4A6 6 0 1 1 10.3 18"/></symbol>
+ <symbol id="i-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+ <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+ <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+ <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+ <symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 0 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></symbol>
+ <symbol id="i-sprout" viewBox="0 0 24 24"><path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8zM14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></symbol>
+</svg>
+<script src="lab.js"></script><!--INLINE_LAB-->
+<script src="app.js"></script><!--INLINE_APP-->
+<script src="popups.js"></script><!--INLINE_POPUPS-->
+<script src="cases.js"></script><!--INLINE_CASES-->

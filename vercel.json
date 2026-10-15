@@ -1,0 +1,6 @@
+{
+  "buildCommand": "node web/build.js",
+  "outputDirectory": "dist",
+  "installCommand": "",
+  "framework": null
+}
