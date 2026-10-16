@@ -954,3 +954,20 @@ button.pill { border: 0; cursor: pointer; font-family: inherit }
 /* narrow header (phones): the token block clips instead of running under Withdraw; the toolbar clock already shows the sim time */
 .tw-token { overflow: hidden } .tw-token > div { min-width: 0 } .tw-token .tt-1 span, .tw-token .tt-2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 @container tophdr (max-width: 640px) { .tw-right .sim-t { display: none } .tw-right { padding: 0 8px; gap: 4px } }
+/* Notes: floats over any page (not a modal), bottom-right above the status bar; drag it by its header */
+.notes { position: fixed; right: 16px; bottom: 48px; z-index: 55; width: 360px; max-height: min(620px, calc(100vh - 120px)); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: var(--shadow); font-size: 13px }
+.notes[hidden] { display: none }
+.nt-h { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: move; user-select: none } .nt-h > svg.i { width: 14px; height: 14px; color: var(--signal) } .nt-h b { font: 600 13px var(--f-ui) } .nt-h .sp { flex: 1 }
+.nt-h .ic, .nt-acts .ic { width: 26px; height: 26px; display: grid; place-items: center; border: 0; background: none; color: var(--muted); border-radius: 6px; cursor: pointer } .nt-h .ic:hover, .nt-acts .ic:hover { background: var(--hover); color: var(--text) } .nt-h .ic svg, .nt-acts .ic svg { width: 14px; height: 14px }
+.nt-new { padding: 10px; border-bottom: 1px solid var(--line) }
+.notes textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 64px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); color: var(--text); font: 13px/1.45 var(--f-ui) } .notes textarea:focus { outline: none; border-color: var(--signal) }
+.nt-ctx { display: flex; align-items: center; gap: 8px; margin-top: 8px } .nt-ctx .chk { font-size: 11.5px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; min-width: 0 } .nt-ctx .chk span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap } .nt-ctx .sp { flex: 1 } .nt-ctx .btn { flex: none }
+.nt-bar { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line) } .nt-bar .seg button { font-size: 11.5px; padding: 3px 8px } .nt-bar .pf-i { flex: 1; min-width: 0 } .nt-bar input { width: 100%; font-size: 12px }
+.nt-list { overflow: auto; padding: 6px 10px 10px; flex: 1; min-height: 60px }
+.nt-card { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 8px; background: var(--surface-2) }
+.nt-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; color: var(--muted) }
+.nt-body { white-space: pre-wrap; word-break: break-word; margin: 6px 0 2px; color: var(--text); line-height: 1.45 }
+.nt-acts { display: flex; justify-content: flex-end; gap: 4px; margin-top: 4px } .nt-acts .ic.danger { width: auto; padding: 0 8px; color: var(--down); font-size: 11.5px; font-weight: 600 }
+.nt-empty { text-align: center; padding: 16px 6px }
+.nt-arch { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line) } .nt-arch:first-of-type { border-top: 0 } .nt-arch div { white-space: pre-wrap; flex: 1 }
+@media (max-width: 860px) { .notes { left: 8px !important; right: 8px !important; top: auto !important; bottom: 44px !important; width: auto; max-height: 70vh } .nt-h { cursor: default } }

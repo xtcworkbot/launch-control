@@ -487,7 +487,15 @@ function modal(title, body, actions) {
   setTimeout(() => { const b = d.querySelectorAll(".m-f [data-i]"); if (b.length && d.isConnected) b[b.length - 1].focus({ preventScroll: true }) });
   return d;
 }
-function wFrom(n) { if (!n) return; const c = BUILTIN[n] || SAVED[n]; WCFG = JSON.parse(JSON.stringify(c)); WCFG.name = ($("w-name") && $("w-name").value) || c.name; WPLAN = null; wRender() }
+// Reusing a configuration copies its launch settings only. Automations (Volume Bot, Auto Buy/Sell, Sniper Guard, Cleanup) and the
+// sandbox's scripted dump are never carried over: you plan those yourself on the Funding page, so nothing runs that you didn't set.
+const AUTO_OFF = { vb_enabled: false, vb_planned: false, vb_start_s: 0, as_enabled: false, as_extra: [], ab_enabled: false, ab_extra: [], sg_enabled: false, cl_enabled: false, exit_enabled: false };
+function wFrom(n) {
+  if (!n) return; const c = BUILTIN[n] || SAVED[n]; if (!c) return;
+  const keep = { name: ($("w-name") && $("w-name").value) || WCFG.name || c.name, ticker: WCFG.ticker, img: WCFG.img, socials: WCFG.socials, desc: WCFG.desc };
+  WCFG = Object.assign(JSON.parse(JSON.stringify(c)), AUTO_OFF, keep); WPLAN = null; wRender();
+  toast(`Launch settings copied from ${n}. No automations were copied: plan them on the Funding page.`);
+}
 async function quickStart() { WCFG = JSON.parse(JSON.stringify(BUILTIN["SHARDS reconstruction"])); WCFG.name = "SHARDS"; await wLaunch() }
 
 // ======================================================= live workspace
@@ -495,7 +503,7 @@ const AUTO_ST = new Map();
 let BMEV = false, LST = null, LSPEED = 0, LTIMER = null, LBUSY = false, LCUR = 0, LSEL = new Set(), CH = null, BTAB = "wallets", TAPE = "all", SIDE = "buy", _lastBottom = 0, _lastRail = 0, TRADES = [];
 async function wLaunch() { lSpeed(0); await eng("live_create", { config: WCFG }); await eng("live_fund"); await wGoLive() }
 async function wGoLive() {
-  LIVE_CFG = WCFG; const used = DRAFTS.find(d => d.config === WCFG); if (used) { DRAFTS = DRAFTS.filter(d => d !== used); if (DRAFT_ID === used.id) DRAFT_ID = null; saveDrafts() }   // the draft became this launch
+  LIVE_CFG = WCFG; LIVE_RUN = "R" + Date.now().toString(36); const used = DRAFTS.find(d => d.config === WCFG); if (used) { DRAFTS = DRAFTS.filter(d => d !== used); if (DRAFT_ID === used.id) DRAFT_ID = null; saveDrafts() }   // the draft became this launch
   lSpeed(0); LST = await eng("live_launch"); LCUR = 0; TRADES = []; LSEL.clear(); PRE = PRE_NEW();
   if (!CH) CH = new LiveChart($("chart"), $("chartwrap")); CH.clear();
   ACT.length = 0; ACT_SEEN.clear(); $("live-empty").hidden = true; $("ws").hidden = false; buildRail(); show("live");

@@ -261,9 +261,9 @@ function openVolumeBot(plan = false) {
   const d = popup({ title: "Volume Bot", width: 560, body: body(), right: [plan ? "Plan" : "Estimate", async d => {
     const m = d.querySelector(".m-b");
     if (plan) { read(m); const sol = check(); if (sol == null) return false;
-      Object.assign(c, { vb_enabled: true, vb_planned: true, vb_target: +sol.toFixed(4), vb_mode: st.tmode, vb_exec: st.exec, vb_wave: st.wave, vb_size_mode: sizeMode(), vb_size: st.size, vb_size_min: st.smin, vb_size_max: st.smax, vb_wallets: st.pool, vb_fee_target: st.fee });
+      Object.assign(c, { vb_enabled: true, vb_planned: true, vb_start_s: 0, vb_target: +sol.toFixed(4), vb_mode: st.tmode, vb_exec: st.exec, vb_wave: st.wave, vb_size_mode: sizeMode(), vb_size: st.size, vb_size_min: st.smin, vb_size_max: st.smax, vb_wallets: st.pool, vb_fee_target: st.fee });
       if (st.tmode === "duration") c.vb_duration_s = st.dur; else { c.vb_delay_min = st.dmin; c.vb_delay_max = st.dmax }
-      WPLAN = null; wPlan(); setTimeout(rerenderStage, 300); toast(`Volume Bot planned: ${f2(sol, 2)} SOL from +${c.vb_start_s}s`); return }
+      WPLAN = null; wPlan(); setTimeout(rerenderStage, 300); toast(`Volume Bot planned: ${f2(sol, 2)} SOL, starts at launch`); return }
     if (stage === 0) {
       read(m); const sol = check(); if (sol == null) return false; const dur = st.tmode === "duration" ? st.dur : 0, sm = sizeMode();
       const avg = sm === "fixed" ? st.size : sm === "random" ? (st.smin + st.smax) / 2 : Math.max(0.05, Math.min(2, sol / 40)), n = Math.ceil(sol / avg), ws = poolN();
@@ -561,7 +561,7 @@ function saveArchive() {
 }
 function archiveLive() {
   if (!LST) return;
-  const e = { id: "L" + Date.now(), kind: "launch", name: WCFG.name, ticker: tick(), at: Date.now(), t: LST.t, mc: LST.mc_sol, migrated: LST.migrated, config: JSON.parse(JSON.stringify(WCFG)),
+  const e = { id: "L" + Date.now(), kind: "launch", run: LIVE_RUN, notes: NOTES.filter(n => n.run && n.run === LIVE_RUN), name: WCFG.name, ticker: tick(), at: Date.now(), t: LST.t, mc: LST.mc_sol, migrated: LST.migrated, config: JSON.parse(JSON.stringify(WCFG)),
     trades: TRADES.slice(0, 12000), read: LST.read || null, report: LST.report || [], timeline: LST.timeline || [], fees: LST.fees || null, pnl: LST.pnl2 || null, holders: LST.holders ? { count: LST.holders.count, top10: LST.holders.top10 } : null, autos: (LST.autos || []).map(a => a.title + " · " + a.status) };
   if (TRADES.length > 12000) e.trimmed = true;
   ARCH.unshift(e); saveArchive(); renderNavBadge(); toast(`${WCFG.name} archived at ${mmss(LST.t)} · ${TRADES.length} trades`);
@@ -590,6 +590,7 @@ function renderArchiveView() {
         <div class="card"><h3>Fees by kind</h3>${F ? `<div class="kv">${Object.entries(F.cats).sort((x, y) => y[1].sum - x[1].sum).map(([k, v]) => `<span>${(FEE_INFO[k] || [k])[0]} <span class="mute">(${v.n})</span></span><span>${f2(v.sum, 4)}</span>`).join("")}</div>` : '<p class="help">—</p>'}</div>
         <div class="card"><h3>What the chain showed</h3>${(a.report || []).map(r => `<div class="sigrow"><span class="lv ${r.level}">${r.level.toUpperCase()}</span><b>${esc(r.name)}</b><span class="v">${esc(r.value)}</span></div>`).join("") || '<p class="help">—</p>'}</div></div>
       ${a.read ? readTimeline(a.read) : ""}
+      ${(() => { const ns = a.run ? NOTES.filter(n => n.run === a.run) : []; const list = ns.length ? ns : a.notes || []; return list.length ? `<div class="card" style="margin-top:12px"><h3>${ICON("pen")} Your notes on this run <span class="pill">${list.length}</span></h3>${list.map(n => `<div class="nt-arch"><span class="pill">${n.sim_t != null ? mmss(n.sim_t) + " sim" : esc(n.page || "")}</span><div>${esc(n.text)}</div></div>`).join("")}</div>` : "" })()}
       <div class="card" style="margin-top:12px"><h3>Settings and automations</h3><p class="help">${esc(a.config.mode)}${a.config.mode === "block0" ? " · " + esc(a.config.preset) : ""} · ${a.config.wallets} holders · dev ${a.config.dev_buy_pct}% · organic ${a.config.org_enabled ? esc(a.config.org_level) : "off"}</p>${(a.autos || []).map(x => `<div class="help">• ${esc(x)}</div>`).join("")}</div></div>`;
   if (a.trades && a.trades.length) requestAnimationFrame(() => { window.ACH = new LiveChart($("a-chart"), $("a-chartwrap"), "a-", "ACH"); ACH.title = a.name; ACH.add(a.trades); ACH.setNow(a.t, a.timeline || []); if (a.read) { ACH.setRead(a.read); ACH.color = "read" } ACH.renderLegend(); ACH.reset(); ACH.followMode = false });
 }
@@ -627,17 +628,30 @@ function saveDrafts() { const d = draftOf(DRAFT_ID); if (d && WCFG === d.config)
 function draftNew(cfg) { cfg.funder_deposit = Math.max(+cfg.funder_deposit || 0, 1000); const d = { id: "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), at: Date.now(), step: 0, config: cfg }; DRAFTS.unshift(d); saveDrafts(); return d }
 function draftsBoot() {
   DRAFTS = (lsGet("lc-drafts", []) || []).filter(d => d && d.config);
-  if (!DRAFTS.length) { const c = JSON.parse(JSON.stringify(BUILTIN["SHARDS reconstruction"])); c.name = "SANDBOX"; draftNew(c) }
-  for (const d of DRAFTS) d.config.funder_deposit = Math.max(+d.config.funder_deposit || 0, 1000);   // sandbox Funder: 1,000 SOL
+  if (!DRAFTS.length) draftNew(freshCfg("SANDBOX"));
+  for (const d of DRAFTS) {
+    d.config.funder_deposit = Math.max(+d.config.funder_deposit || 0, 1000);   // sandbox Funder: 1,000 SOL
+    if (d.config.vb_planned && +d.config.vb_start_s === 168) d.config.vb_start_s = 0;   // a Volume Bot you planned starts at launch (168 s was SHARDS' value leaking in)
+  }
   DRAFT_ID = DRAFTS[0].id; WCFG = DRAFTS[0].config;
 }
 function draftOpen(id) { const d = draftOf(id); if (!d) return; saveDrafts(); DRAFT_ID = id; WCFG = d.config; WPLAN = null; PRE = PRE_NEW(); W_STEP = d.step || 0; show("create") }
-// a new launch starts like the tool's Create Launch: pump.fun, Block-0 Quick, nothing planned yet (no Volume Bot, Auto Sell or scripted dump)
-function draftFresh() { const c = Object.assign(JSON.parse(JSON.stringify(DEFAULTS || BUILTIN["Blank (everything off)"])), { name: "Untitled", launchpad: "pumpfun", vb_enabled: false, as_enabled: false, ab_enabled: false, sg_enabled: false, cl_enabled: false, exit_enabled: false }); delete c.ticker; const d = draftNew(c); DRAFT_ID = d.id; WCFG = c; WPLAN = null; PRE = PRE_NEW(); W_STEP = 0 }
+// a new launch starts like the tool's Create Launch: pump.fun, Block-0 Quick, nothing planned yet (no Volume Bot, Auto Buy/Sell,
+// Sniper Guard, Cleanup or scripted dump), so nothing runs that you didn't set yourself
+const freshCfg = (name = "Untitled") => { const c = Object.assign(JSON.parse(JSON.stringify(DEFAULTS && Object.keys(DEFAULTS).length ? DEFAULTS : BUILTIN["Blank (everything off)"])), AUTO_OFF, { name, launchpad: "pumpfun" }); delete c.ticker; return c };
+// Lab → Configurations → Open in Create launch: a new launch WITH the configuration's own automations and scripted dump, for
+// recreating a case like SHARDS. The only path that carries automations over; everything else starts clean.
+function openCfgInCreate() {
+  const c = JSON.parse(JSON.stringify(cur)); delete c.ticker; c.name = c.name || "Untitled";
+  const d = draftNew(c); DRAFT_ID = d.id; WCFG = c; WPLAN = null; PRE = PRE_NEW(); W_STEP = W_LAST; show("create");
+  const on = [c.vb_enabled && `Volume Bot at ${mmss(c.vb_start_s || 0)}`, c.as_enabled && "Auto Sell", c.ab_enabled && "Auto Buy", c.sg_enabled && "Sniper Guard", c.cl_enabled && "Cleanup", c.exit_enabled && `scripted dump at ${mmss(c.exit_start_s || 0)}`].filter(Boolean);
+  toast(on.length ? `Opened "${c.name}" with its automations: ${on.join(", ")}` : `Opened "${c.name}" (no automations)`);
+}
+function draftFresh() { const c = freshCfg(); const d = draftNew(c); DRAFT_ID = d.id; WCFG = c; WPLAN = null; PRE = PRE_NEW(); W_STEP = 0 }
 function draftDrop(id) { DRAFTS = DRAFTS.filter(x => x.id !== id); if (DRAFT_ID === id) { DRAFT_ID = null; if (ROUTE === "create") { show(LST ? "live" : "dashboard") } } saveDrafts(); renderLaunchList() }
 // the launch that is live keeps its own settings; drafts opened meanwhile don't touch it
 function useLiveCfg() { if (LST && LIVE_CFG) WCFG = LIVE_CFG }
-function endLive() { lSpeed(0); LST = null; LIVE_CFG = null; TRADES = []; LSEL.clear(); $("live-empty").hidden = false; $("ws").hidden = true; statusBar(); const d = draftOf(DRAFT_ID); if (d) WCFG = d.config; if (ROUTE === "live") show("dashboard"); else renderLaunchList() }
+function endLive() { lSpeed(0); LST = null; LIVE_CFG = null; LIVE_RUN = null; TRADES = []; LSEL.clear(); $("live-empty").hidden = false; $("ws").hidden = true; statusBar(); const d = draftOf(DRAFT_ID); if (d) WCFG = d.config; if (ROUTE === "live") show("dashboard"); else renderLaunchList() }
 function launchMenu(e, kind, id) {
   e.preventDefault(); e.stopPropagation(); document.querySelectorAll(".ctx-menu").forEach(x => x.remove());
   const c = kind === "live" ? LIVE_CFG || WCFG : (draftOf(id) || {}).config; if (!c) return;
@@ -963,7 +977,8 @@ function renderGuide() {
     "<b>Chain & launchpad.</b> Pick PumpFun (pump.fun's curve, moves to PumpSwap at ~85 SOL) or Meteora DBC (the curve SHARDS used, measured from its real pool).",
     "<b>Token details.</b> Name, ticker, picture. Only cosmetic.",
     "<b>Launch settings.</b> Choose a mode. <b>Block-0</b> = the team buys in the same moment the coin is created (the usual scam setup). <b>Organic</b> = holders buy one by one after launch. <b>Manual</b> = you press Buy yourself. In Block-0, pick a preset: <b>Quick</b> (fast, cheap, easiest to spot), <b>Clean</b> (slower, harder to spot), <b>Full</b> (adds 'temp holder' wallets that pass coins along), or <b>Custom</b>. The right-hand panel shows cost, expected market cap and how detectable it is.",
-    "<b>Advanced</b> holds the extras: funding through exchanges (hides who paid the wallets), Generate Activity (makes new wallets look used), fee target, empty holders, Streamflow."]))}
+    "<b>Advanced</b> holds the extras: funding through exchanges (hides who paid the wallets), Generate Activity (makes new wallets look used), fee target, empty holders, Streamflow, and Start from a configuration (copies launch settings only, never automations).",
+    "<b>A new launch starts clean:</b> no Volume Bot, Auto Buy/Sell, Sniper Guard, Cleanup or dump runs unless you plan it on the Funding page. A Volume Bot you plan there starts the moment the coin launches."]))}
   ${sec("fund", "2. Funding page", `<p>This is where the plan becomes wallets. Each row is one wallet: its role (Dev, Front MEV, Back MEV, Holder…), how much of the coin it will buy, and how much SOL it still needs.</p>
     ${steps(["<b>Deposit</b> puts pretend SOL in the Funder (you start with 1,000).", "Plan the automations with the icons on the right: <b>Auto Sell</b>, <b>Sniper Guard</b>, <b>Volume Bot</b>, <b>Auto Buy</b>. They show as 'scheduled' and start by themselves after launch.", "<b>1. Distribute</b> sends SOL to every wallet (each transfer costs a small fee).", "<b>2. Launch</b> creates the coin. The chart starts."])}
     <p class="help">Row ⋯ menu: Replace by Fresh (new wallet address), Import Wallet (use one from My Wallets), Export Private Key (sandbox wallets have none), Add to Folder. Footer ⋯: tracker exports. Delete = delete the whole plan.</p>`)}
@@ -1006,9 +1021,108 @@ function renderGuide() {
   ${sec("recreate", "7. Recreate a real chart (SHARDS)", steps([
     "<b>Look at the real thing.</b> Import & match → Research cases → SHARDS. Press Play: every real trade replays in order, coloured by who made it (network wallets, creator, snipers, other linked groups, no link found). Click any wallet for its evidence and Solscan links.",
     "<b>Read what happened.</b> The cards above the chart list it step by step: staged at launch, planned rotation through one-use escrows, run-up buying, the dump, who absorbed it.",
-    "<b>Rebuild it in the sandbox.</b> Lab → Configurations → 'SHARDS (fitted to the real chart)' → Open in Create launch, or Clone a Configuration. It uses the Meteora curve, 4 Front MEV wallets buying 55%, the network's rotation (Cleanup), and the dump at 6:45, with an outside market tuned to SHARDS' real volume.",
+    "<b>Rebuild it in the sandbox.</b> Lab → Configurations → 'SHARDS (fitted to the real chart)' → Open in Create launch. This is the one way to bring a configuration's automations along (its Cleanup and its dump at 6:45); a normal new launch, or Start from a configuration, copies launch settings only. It uses the Meteora curve, 4 Front MEV wallets buying 55%, the network's rotation (Cleanup), and the dump at 6:45, with an outside market tuned to SHARDS' real volume.",
     "<b>Compare.</b> Import & match → Match: the closest configurations and where they differ. Change one setting at a time (e.g. organic level, rotation speed) and see which one makes the sandbox chart look like the real one: that is how you back out what the team did."]))}
-  ${sec("save", "8. Save, compare, export", `<p>Right-click a launch in the left column → <b>Archive</b> saves the whole run (every trade, the chart's read, fees, P&L) and removes it from the list. Find it under <b>Archived</b> (See Launch) and on the <b>Dashboard</b>. <b>Export</b> downloads a file you can keep or share; browser storage alone can be lost if browser data is cleared. Drafts stay in the left column until you delete them (right-click → Delete).</p>`)}
+  ${sec("save", "8. Save, compare, export", `<p>Right-click a launch in the left column → <b>Archive</b> saves the whole run (every trade, the chart's read, fees, P&L) and removes it from the list. Find it under <b>Archived</b> (See Launch) and on the <b>Dashboard</b>. <b>Export</b> downloads a file you can keep or share; browser storage alone can be lost if browser data is cleared. Drafts stay in the left column until you delete them (right-click → Delete).</p><p><b>Notes</b> (status bar, or press N): a notepad that floats over every page. Each note is tagged with the launch and sim time you wrote it at, shows again on that run's Archived page, and every open tab sees the same notes. Export saves them to a file you can send to someone; they use Import to add them.</p>`)}
   ${sec("limits", "What the sandbox can't do", `<ul class="g-steps"><li>Real wallets, keys or chains: none. Every address is made up.</li><li>The tool's Marketplace purchases, Shield, Alternative Routing and Market Maker are not modelled.</li><li>The outside market is a model: it reacts to price and momentum, but it is not real people.</li><li>Pump.fun numbers (curve, fees) follow the published values; Meteora's were measured from one launch (SHARDS).</li></ul>`)}
   </div></div>`;
 }
+
+// ---------------------------------------------------------------- Notes: a small notepad that floats over any page
+// One notebook for the whole app: every page, every launch, and every open tab of it (tabs stay in sync). Saved in this browser
+// as you type. Each note remembers where it was written (page, launch, sim time). Export / Import moves notes to another person.
+let NOTES = lsGet("lc-notes", []) || [], NQ = "", NF = "all", NEDIT = null, NDEL = null, LIVE_RUN = null;
+const saveNotes = () => { lsSet("lc-notes", NOTES); noteBadge() };
+const noteBadge = () => { const b = $("st-notes"); if (b) b.innerHTML = `${ICON("pen")}Notes${NOTES.length ? ` <span class="pill">${NOTES.length}</span>` : ""}` };
+// where you are right now: the live launch (with its sim time) if there is one, else the draft you're editing
+function noteCtx() {
+  const page = TITLES[ROUTE] || ROUTE;
+  if (LST && (ROUTE !== "create" || WCFG === LIVE_CFG)) { const c = LIVE_CFG || WCFG; return { page, run: LIVE_RUN, ticker: cfgTick(c), name: c.name || "", sim_t: +(+LST.t || 0).toFixed(1), live: true } }
+  if (ROUTE === "create" && WCFG) return { page, draft: DRAFT_ID, ticker: cfgTick(WCFG), name: WCFG.name || "" };
+  return { page };
+}
+const ctxLabel = x => [x.ticker ? `$${x.ticker}` : "", x.sim_t != null ? `${mmss(x.sim_t)} sim` : x.draft ? "draft" : "", x.page].filter(Boolean).join(" · ");
+const sameLaunch = (n, x) => (x.run && n.run === x.run) || (x.draft && n.draft === x.draft);
+function openNotes(force) {
+  let el = $("notes");
+  if (el && !el.hidden && force !== true) { el.hidden = true; return }
+  if (!el) {
+    el = document.createElement("div"); el.id = "notes"; el.className = "notes"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", "Notes");
+    el.innerHTML = `<div class="nt-h">${ICON("pen")}<b>Notes</b><span class="pill" id="nt-n"></span><span class="sp"></span>
+        <button class="ic" data-nt="export" title="Export notes to a file (to share or keep)" aria-label="Export notes">${ICON("download")}</button>
+        <button class="ic" data-nt="import" title="Import notes from a file" aria-label="Import notes">${ICON("upload")}</button>
+        <button class="ic" data-nt="close" title="Close (N)" aria-label="Close notes">${ICON("x")}</button><input type="file" id="nt-file" accept=".json,application/json" hidden></div>
+      <div class="nt-new"><textarea id="nt-text" rows="3" placeholder="Write a note… Ctrl/⌘ + Enter saves"></textarea>
+        <div class="nt-ctx"><label class="chk"><input type="checkbox" id="nt-tag" checked><span id="nt-where"></span></label><span class="sp"></span><button class="btn sm primary" data-nt="save">Save note</button></div></div>
+      <div class="nt-bar"><div class="seg" id="nt-f"><button data-nf="all">All</button><button data-nf="this">This launch</button></div><div class="pf-i sm"><input id="nt-q" placeholder="Search notes" aria-label="Search notes"></div></div>
+      <div class="nt-list" id="nt-list"></div>`;
+    document.body.append(el);
+    const pos = lsGet("lc-notes-pos", null); if (pos && matchMedia("(min-width: 861px)").matches) { el.style.left = Math.min(pos[0], innerWidth - 120) + "px"; el.style.top = Math.max(8, Math.min(pos[1], innerHeight - 80)) + "px"; el.style.right = "auto"; el.style.bottom = "auto" }
+    const ta = el.querySelector("#nt-text"); ta.value = lsGet("lc-notes-draft", "") || "";
+    ta.addEventListener("input", () => lsSet("lc-notes-draft", ta.value));   // nothing typed is lost, even on a reload
+    el.addEventListener("keydown", e => {
+      if (e.key === "Escape") { e.stopPropagation(); if (NEDIT) { NEDIT = null; renderNotes() } else el.hidden = true; return }
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); if (e.target.id === "nt-text") addNote(); else if (e.target.closest(".nt-card")) el.querySelector('[data-nt="esave"]') && el.querySelector('[data-nt="esave"]').click() }
+    });
+    el.querySelector("#nt-q").addEventListener("input", e => { NQ = e.target.value.toLowerCase(); renderNotes() });
+    el.querySelector("#nt-file").addEventListener("change", e => { const f = e.target.files[0]; if (f) f.text().then(importNotes); e.target.value = "" });
+    el.addEventListener("click", e => {
+      const f = e.target.closest("[data-nf]"); if (f) { NF = f.dataset.nf; renderNotes(); return }
+      const b = e.target.closest("[data-nt]"); if (!b) return; const a = b.dataset.nt, id = b.closest(".nt-card") && b.closest(".nt-card").dataset.id, n = NOTES.find(x => x.id === id);
+      if (a === "close") el.hidden = true; else if (a === "save") addNote(); else if (a === "export") exportNotes(); else if (a === "import") el.querySelector("#nt-file").click();
+      else if (a === "edit") { NEDIT = id; NDEL = null; renderNotes(); const t = el.querySelector(".nt-card.ed textarea"); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length) } }
+      else if (a === "ecancel") { NEDIT = null; renderNotes() }
+      else if (a === "esave" && n) { const v = el.querySelector(".nt-card.ed textarea").value.trim(); if (!v) { toast("A note can't be empty. Use Delete to remove it.", "warn"); return } n.text = v; n.edited = Date.now(); NEDIT = null; saveNotes(); renderNotes(); toast("Note updated") }
+      else if (a === "copy" && n) copyText(n.text, "Note copied");
+      else if (a === "del" && n) { if (NDEL !== id) { NDEL = id; renderNotes(); setTimeout(() => { if (NDEL === id) { NDEL = null; renderNotes() } }, 3000); return } NOTES = NOTES.filter(x => x.id !== id); NDEL = null; saveNotes(); renderNotes(); toast("Note deleted") }
+    });
+    const h = el.querySelector(".nt-h");   // drag by the header (desktop); the spot is remembered
+    h.addEventListener("mousedown", e => {
+      if (e.target.closest("button") || matchMedia("(max-width: 860px)").matches) return; e.preventDefault();
+      const r = el.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+      const mv = ev => { const x = Math.max(8, Math.min(ev.clientX - dx, innerWidth - r.width - 8)), y = Math.max(8, Math.min(ev.clientY - dy, innerHeight - 80)); Object.assign(el.style, { left: x + "px", top: y + "px", right: "auto", bottom: "auto" }) };
+      const up = () => { removeEventListener("mousemove", mv); removeEventListener("mouseup", up); const q = el.getBoundingClientRect(); lsSet("lc-notes-pos", [Math.round(q.left), Math.round(q.top)]) };
+      addEventListener("mousemove", mv); addEventListener("mouseup", up);
+    });
+  }
+  el.hidden = false; renderNotes(); el.querySelector("#nt-text").focus();
+}
+function renderNotes() {
+  const el = $("notes"); if (!el) return; const x = noteCtx(), here = !!(x.run || x.draft);
+  if (!here && NF === "this") NF = "all";
+  el.querySelector("#nt-where").textContent = `Tag with ${ctxLabel(x) || "this page"}`;
+  el.querySelectorAll("[data-nf]").forEach(b => { b.classList.toggle("on", b.dataset.nf === NF); if (b.dataset.nf === "this") { b.disabled = !here; b.title = here ? "" : "Open a launch or draft first" } });
+  const list = NOTES.filter(n => (NF === "all" || sameLaunch(n, x)) && (!NQ || (n.text + " " + ctxLabel(n)).toLowerCase().includes(NQ)));
+  el.querySelector("#nt-n").textContent = NOTES.length;
+  el.querySelector("#nt-list").innerHTML = list.map(n => `<div class="nt-card${NEDIT === n.id ? " ed" : ""}" data-id="${n.id}">
+      <div class="nt-meta"><span>${new Date(n.at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>${ctxLabel(n) ? `<span class="pill">${esc(ctxLabel(n))}</span>` : ""}${n.edited ? '<span class="mute">edited</span>' : ""}</div>
+      ${NEDIT === n.id ? `<textarea rows="4">${esc(n.text)}</textarea><div class="nt-acts"><button class="btn sm" data-nt="ecancel">Cancel</button><button class="btn sm primary" data-nt="esave">Save</button></div>`
+        : `<div class="nt-body">${esc(n.text)}</div><div class="nt-acts"><button class="ic" data-nt="edit" title="Edit" aria-label="Edit note">${ICON("pen")}</button><button class="ic" data-nt="copy" title="Copy" aria-label="Copy note">${ICON("copy")}</button><button class="ic${NDEL === n.id ? " danger" : ""}" data-nt="del" title="${NDEL === n.id ? "Click again to delete" : "Delete"}" aria-label="Delete note">${NDEL === n.id ? "Delete?" : ICON("trash")}</button></div>`}</div>`).join("")
+    || `<p class="help nt-empty">${NOTES.length ? "No notes match." : "No notes yet. Write one above: it's tagged with the launch and sim time you're on, so you can find it again."}</p>`;
+}
+function addNote() {
+  const el = $("notes"), ta = el.querySelector("#nt-text"), text = ta.value.trim(); if (!text) { toast("Write something first", "warn"); ta.focus(); return }
+  const x = el.querySelector("#nt-tag").checked ? noteCtx() : { page: noteCtx().page };
+  NOTES.unshift(Object.assign({ id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), text }, x));
+  saveNotes(); ta.value = ""; lsSet("lc-notes-draft", ""); renderNotes(); ta.focus(); toast(`Note saved${x.ticker ? ` to $${x.ticker}` : ""}`);
+}
+function exportNotes() {
+  if (!NOTES.length) { toast("No notes to export yet", "warn"); return }
+  const blob = new Blob([JSON.stringify({ app: "Launch Control", kind: "notes", exported_at: new Date().toISOString(), notes: NOTES }, null, 1)], { type: "application/json" }), u = URL.createObjectURL(blob), l = document.createElement("a");
+  l.href = u; const t = new Date(), ymd = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;   // your local date
+  l.download = `launch-control-notes-${ymd}.json`; document.body.append(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 1000);
+  toast(`Exported ${NOTES.length} note${NOTES.length === 1 ? "" : "s"}`);
+}
+function importNotes(txt) {
+  let d; try { d = JSON.parse(txt) } catch (e) { toast("That file isn't a notes export", "warn"); return }
+  const list = (Array.isArray(d) ? d : d && d.notes) || [], ok = list.filter(n => n && typeof n.text === "string" && n.text.trim());
+  if (!ok.length) { toast("No notes found in that file", "warn"); return }
+  const have = new Set(NOTES.map(n => n.id)); let added = 0;
+  for (const n of ok) { const id = typeof n.id === "string" && n.id ? n.id : "n" + Math.random().toString(36).slice(2, 10); if (have.has(id)) continue;
+    NOTES.push({ id, at: +n.at || Date.now(), text: String(n.text).slice(0, 20000), page: n.page ? String(n.page) : "", ticker: n.ticker ? String(n.ticker) : "", name: n.name ? String(n.name) : "", sim_t: n.sim_t != null && isFinite(+n.sim_t) ? +n.sim_t : undefined, run: n.run, draft: n.draft, edited: n.edited }); have.add(id); added++ }
+  NOTES.sort((a, b) => b.at - a.at); saveNotes(); renderNotes(); toast(`Imported ${added} note${added === 1 ? "" : "s"}${ok.length - added ? ` (${ok.length - added} already here)` : ""}`);
+}
+// N toggles the notes anywhere you're not typing; other open tabs of the app pick up changes at once
+addEventListener("keydown", e => { if (e.key.toLowerCase() !== "n" || e.metaKey || e.ctrlKey || e.altKey) return; const t = e.target; if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return; if (document.querySelector(".palette")) return; e.preventDefault(); openNotes() });
+addEventListener("storage", e => { if (e.key === "lc-notes") { NOTES = lsGet("lc-notes", []) || []; noteBadge(); renderNotes() } });
+setTimeout(noteBadge);

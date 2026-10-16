@@ -121,6 +121,20 @@ const check = (name, ok, info = "") => { console.log((ok ? "PASS " : "FAIL ") + 
   await p.evaluate(() => document.querySelector('.cal-nav [data-m="-1"]').click()); await sleep(100);
   check("L13: P&L Calendar goes to the previous month", await p.evaluate(m0 => document.querySelector(".cal-nav b").textContent !== m0, m0));
 
+  // fresh launches (17 Oct): nothing pre-planned, a planned Volume Bot starts at launch, copying a configuration copies no automations
+  await p.evaluate(() => { localStorage.removeItem("lc-drafts"); draftsBoot() });
+  check("Starter draft is a clean launch (no Volume Bot, Auto Sell or dump)", await p.evaluate(() => { const c = DRAFTS[DRAFTS.length - 1].config; return !c.vb_enabled && !c.as_enabled && !c.exit_enabled && !c.ab_enabled && !c.cl_enabled }));
+  await p.evaluate(() => { newLaunch(); wFrom("SHARDS reconstruction") }); await sleep(200);
+  check("Start from a configuration copies launch settings but no automations", await p.evaluate(() => WCFG.front_count === 4 && WCFG.launchpad === "meteora" && !WCFG.vb_enabled && !WCFG.as_enabled && !WCFG.exit_enabled));
+  await p.evaluate(() => { newLaunch(); W_STEP = 3; wRender() }); await sleep(900);
+  await p.evaluate(() => openVolumeBotPlan()); await sleep(300);
+  await p.evaluate(() => { const d = [...document.querySelectorAll(".pop")].pop(); d.querySelector("[data-go]").click() }); await sleep(400);
+  check("A planned Volume Bot starts at launch, not at 2:48", await p.evaluate(() => WCFG.vb_enabled && WCFG.vb_planned && WCFG.vb_start_s === 0), await p.evaluate(() => WCFG.vb_start_s));
+  await p.evaluate(async () => { await wLaunch(); lSpeed(0); await lStep(20) }); await sleep(800);
+  check("…and its trades begin in the first seconds", await p.evaluate(() => { const v = TRADES.filter(t => t[5] === "volume_bot"); return v.length > 0 && v[0][0] < 15 }), await p.evaluate(() => { const v = TRADES.filter(t => t[5] === "volume_bot"); return v.length ? v[0][0] + "s" : "none" }));
+  await p.evaluate(() => { endLive(); show("config"); loadCfg("SHARDS (fitted to the real chart)") }); await sleep(400);
+  await p.evaluate(() => openCfgInCreate()); await sleep(400);
+  check("Lab → Open in Create launch keeps the configuration's own automations", await p.evaluate(() => ROUTE === "create" && WCFG.cl_enabled && WCFG.exit_enabled && WCFG.exit_start_s === 405));
   check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | "));
   console.log(`\n${pass} passed, ${fail} failed`);
   await b.close(); process.exit(fail ? 1 : 0);

@@ -4,7 +4,7 @@ An offline simulator that recreates Proxima launch configurations and shows the 
 
 ## Quick start
 
-**Use it:** run it on your own computer (below, about a minute). Saved configurations, drafts and runs stay in your own browser.
+**Use it:** run it on your own computer (below, about a minute). Saved configurations, drafts, runs and notes stay in your own browser.
 
 **Run it locally** (needs Node 18+, nothing else):
 ```
@@ -22,7 +22,8 @@ node ui-tests/fit-popups.js           # every pop-up fits the window on 6 deskto
 node web/test_features.js            # every feature leaves its own trades + timeline note on the chart; outside-market realism (41 checks)
 cd ui-tests && npm install           # once; uses your installed Google Chrome (or set CHROME=/path/to/chrome)
 npm run e2e                          # 105 click-through checks (needs the server above running)
-node ui-tests/ui-fixes.js             # 30 checks that the click-through audit's findings stay fixed
+node ui-tests/ui-fixes.js             # 35 checks that the click-through audit's findings (and fresh launches) stay fixed
+node ui-tests/notes.js                # 30 checks of the Notes panel (save, tags, reload, tabs, archive, export/import, fit)
 npm run shots                        # screenshots + overlap/overflow/console checks at 1440 and 390 px
 ```
 
@@ -40,6 +41,8 @@ Code: `web/engine.js` (simulation + detector, runs in a Web Worker), `web/app.js
 ## Status (2026-10-15)
 - Network numbers are Solana's as of Oct 2026: 200 ms slots (SIMD-0525; the engine's SLOT_S), rent at 5,080 lamports/byte (a pump.fun Token-2022 coin account 0.00151384 SOL, plus 0.0013462 SOL for pump.fun's volume account on a wallet's first buy), base fee unchanged. Since 7 Oct a pump.fun buy that completes the curve carries its leftover SOL into the new pool ("synthetic migration").
 - Outside market levels follow real pump.fun data (sample of 38 launches on 15 Oct 2026, plus published studies): Snipers None / Typical (default: ~4 in the first 5 s, about 1 launch in 5 none, a heavy tail) / Busy / Hot (SHARDS-like) / Custom; Organic Dead / Very low (median launch: ~25 trades, nearly all in minute one) / Mid / Bullish (fills the curve in ~5-10 min and ~600-800 trades, then fades after migration). Snipers hold for a log-spread time, a third sell in two parts, contested launches have failed attempts that still pay fees, and bots' sells that hit the curve-to-pool moment retry. Copy bots buy a fixed ~0.25 SOL by default.
+- Notes (status bar, or press N): a notepad that floats over every page, saved in the browser as you type. Each note is tagged with the page, launch and sim time; it shows again on the run's Archived page, every open tab stays in sync, and Export / Import moves notes between people.
+- A new launch starts clean: no Volume Bot, Auto Buy/Sell, Sniper Guard, Cleanup or scripted dump unless you plan it, and a Volume Bot planned on the Funding page starts at launch. "Start from a configuration" copies launch settings only; Lab → Configurations → "Open in Create launch" is the one path that brings a configuration's automations along (for recreating a case like SHARDS).
 - The generic built-in presets launch on pump.fun with Typical snipers; only the two SHARDS presets use Meteora DBC and SHARDS' crowd. New launches start clean (Block-0 Quick, no automations).
 - "SHARDS (fitted to the real chart)" reproduces the real chart in the Workspace: the crash lands at 6:48-6:50 in every seed (real 6:50), peaks 0.8-1.2k SOL (real 1.17k), mean |log MC ratio| ~0.49 over 18 checkpoints and 5 seeds.
 - Market caps show in USD at the live SOL price (Coinbase, CoinGecko as backup, refreshed every 5 min). Click the SOL price in the status bar to pin your own, e.g. the price on a real launch's day. Trade sizes, funding and volume stay in SOL.

@@ -253,7 +253,7 @@ const SCHEMA = [
     ["snipe_at_s", "Snipe at (s after deploy)", "float", 60, { show: "scheduled" }],
     ["manual_buy_at_s", "Manual: holders buy at (s)", "float", 20, { show: "mode=manual" }],
     ["manual_style", "Manual: multi-wallet style", "select", "stagger", { options: ["stagger", "parallel"], show: "mode=manual" }],
-    ["exit_enabled", "Manual sells (operator exit)", "bool", true, { help: "Holder wallets sell out over a window, via Sell in the Live Workspace." }],
+    ["exit_enabled", "Manual sells (operator exit)", "bool", false, { help: "Holder wallets sell out over a window, via Sell in the Live Workspace." }],
     ["exit_start_s", "Exit starts at (s)", "float", 300, { show: "exit_enabled" }],
     ["exit_window_s", "Exit window (s)", "float", 900, { show: "exit_enabled" }],
     ["exit_pct", "Exit sells % of holdings", "float", 100, { show: "exit_enabled" }],
@@ -279,8 +279,8 @@ const SCHEMA = [
     ["sg_timed_s", "Timed duration (s)", "float", 30, { show: "sg_end=timed" }],
     ["sg_whitelist", "Whitelist (addresses whose buys are ignored)", "json", [], { show: "never" }]]],
   ["Volume Bot", [
-    ["vb_enabled", "Enable Volume Bot", "bool", true, {}],
-    ["vb_start_s", "Start at (s)", "float", 168, { show: "vb_enabled" }],
+    ["vb_enabled", "Enable Volume Bot", "bool", false, {}],
+    ["vb_start_s", "Start at (s)", "float", 0, { show: "vb_enabled", help: "0 = starts when the coin launches (a Volume Bot planned on the Funding page always starts at launch)." }],
     ["vb_target", "Target volume (SOL, both sides)", "float", 32, { show: "vb_enabled" }],
     ["vb_mode", "Timing mode", "select", "duration", { options: [["duration", "Duration mode"], ["delay", "Delay mode"]], show: "vb_enabled" }],
     ["vb_duration_s", "Duration (s)", "float", 240, { show: "vb_mode=duration" }],
@@ -299,7 +299,7 @@ const SCHEMA = [
 function autoFields(p, side) {
   const unit = side === "buy" ? "SOL" : "M tokens", react = side === "buy" ? "outside sells" : "outside buys";
   return [
-    [`${p}_enabled`, `Enable Auto${side[0].toUpperCase() + side.slice(1)}`, "bool", side === "sell", {}],
+    [`${p}_enabled`, `Enable Auto${side[0].toUpperCase() + side.slice(1)}`, "bool", false, {}],
     [`${p}_wallets`, "Wallets used", "select", "holders", { options: ["holders", "front", "back", "all"], show: `${p}_enabled` }],
     [`${p}_start_delay_s`, "Start Delay (s)", "float", 0, { show: `${p}_enabled` }],
     [`${p}_counter`, `Counter Trading (react to ${react})`, "bool", true, { show: `${p}_enabled` }],
@@ -325,7 +325,7 @@ function autoFields(p, side) {
 SCHEMA.push(["AutoBuy", autoFields("ab", "buy")], ["AutoSell", autoFields("as", "sell")],
   ["Cleanup", [
     ["cl_enabled", "Enable live Cleanup", "bool", false, { help: "Block-0 layer moves already run their own Cleanup; this is an extra run from the Live Workspace." }],
-    ["cl_start_s", "Start at (s)", "float", 120, { show: "cl_enabled" }],
+    ["cl_start_s", "Start at (s)", "float", 0, { show: "cl_enabled" }],
     ["cl_inputs", "Sellers (input wallets)", "select", "holders", { options: ["holders", "front", "back", "temp"], show: "cl_enabled" }],
     ["cl_outputs", "Buyers (new output wallets)", "int", 10, { range: [1, 200], show: "cl_enabled" }],
     ["cl_share_pct", "% of sellers' holdings moved", "float", 100, { range: [1, 100], show: "cl_enabled" }],

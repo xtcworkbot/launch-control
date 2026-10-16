@@ -64,6 +64,7 @@
       <div class="card" style="margin-bottom:12px"><div class="row">
         <label class="grow">Name<input id="cfgname" oninput="cur.name=this.value"></label>
         <button class="b" onclick="runCurrent()">Run ▶</button>
+        <button class="g" onclick="openCfgInCreate()" title="New launch with this configuration's own automations and scripted dump (to recreate a case)">Open in Create launch</button>
         <button class="g" onclick="saveCurrent()">Save</button>
         <button class="g" onclick="cloneCurrent()">Save as copy</button>
         <button class="g" onclick="loadCfg('Blank (everything off)')" title="Every tool and outside trader switched off">Blank</button><button class="g" onclick="loadDefaults()">Defaults</button></div></div>
@@ -134,7 +135,7 @@
 <section class="tab" id="t-activity"><div id="activity-page"></div></section>
 
     </div>
-    <footer class="status" id="status"><span class="ok"><i class="dot"></i><span id="st-engine">Sim engine starting…</span></span><a onclick="show('guide')"><svg class="i"><use href="#i-info"/></svg>Guide</a><span class="sp"></span>
+    <footer class="status" id="status"><span class="ok"><i class="dot"></i><span id="st-engine">Sim engine starting…</span></span><a onclick="show('guide')"><svg class="i"><use href="#i-info"/></svg>Guide</a><a id="st-notes" onclick="openNotes()" title="Notes: write and keep notes from any page (press N)"><svg class="i"><use href="#i-pen"/></svg>Notes</a><span class="sp"></span>
       <a id="st-sol" class="st-price" onclick="solPriceDialog()" title="SOL price used for USD market caps. Click to set your own.">SOL …</a><span class="st-mid" id="st-mid">No live launch</span><a class="st-fees" id="st-fees" onclick="openFees()" title="Fees paid by your launch wallets"></a><span class="sp"></span>
       <a href="https://docs.proxima.tools" target="_blank" rel="noopener"><svg class="i"><use href="#i-doc"/></svg>Tool docs</a><a onclick="show('activity')"><svg class="i"><use href="#i-clock"/></svg>Activity</a><a id="st-theme" class="theme-btn" onclick="toggleTheme()" title="Switch light / dark"></a><span class="badge-sim">Simulation · no live chain</span></footer>
   </div>
